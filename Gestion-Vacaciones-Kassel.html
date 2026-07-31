@@ -618,6 +618,7 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
 
 <script>
 (function(){
+const API_URL = "https://script.google.com/macros/s/AKfycbylq0cphxg3Pmrc-Z6lzOjhneAk_qt9WMhCOSJi2sJMizp4ZyYmB2GloufQzrTr91QR_g/exec";
   const OPERADORES_INICIALES = [
     "Daniel Lopez","Diego Rueda","Erick Pineda","Agustín Gayosso","Jesús Cardenas",
     "Felix Fernandez","Luis Garcia","Luis Aguirre","Eduardo Medina","Gustavo Alegria",
@@ -649,33 +650,81 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
   function isoOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
   function todayIso(){ const t=new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); }
 
-  async function loadData(){
-    try{
-      const res = await window.storage.get('kassel:operators', true);
-      operadores = res ? JSON.parse(res.value) : OPERADORES_INICIALES.slice();
-    }catch(e){ operadores = OPERADORES_INICIALES.slice(); }
-    if(!operadores || !operadores.length) operadores = OPERADORES_INICIALES.slice();
+async function loadData(){
+  try {
 
-    try{
-      const res = await window.storage.get('kassel:auxiliares', true);
-      auxiliares = res ? JSON.parse(res.value) : [];
-    }catch(e){ auxiliares = []; }
+    const respuesta = await fetch(API_URL + "?accion=cargarDatos");
+    const datos = await respuesta.json();
 
-    try{
-      const res = await window.storage.get('kassel:events', true);
-      eventos = res ? JSON.parse(res.value) : [];
-    }catch(e){ eventos = []; }
+    if (!datos.ok) {
+      throw new Error(datos.mensaje || "No se pudieron cargar los datos");
+    }
+
+    operadores = datos.operadores.map(persona => persona.nombre);
+    auxiliares = datos.auxiliares.map(persona => persona.nombre);
+    eventos = datos.eventos || [];
+
+
+    console.log("Datos cargados desde Google Sheets");
+
+  } catch (error) {
+
+    console.error("Error al cargar datos:", error);
+
+    alert(
+      "No se pudieron cargar los datos compartidos.\n\n" +
+      "Revisa tu conexión a internet."
+    );
+
+  }
+}
+
+ async function enviarAPI(datos){
+  const respuesta = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(datos)
+  });
+
+  const resultado = await respuesta.json();
+
+  if (!resultado.ok) {
+    throw new Error(resultado.mensaje || "Error en la API");
   }
 
-  async function saveOperadores(){
-    try{ await window.storage.set('kassel:operators', JSON.stringify(operadores), true); }catch(e){ console.error(e); }
-  }
-  async function saveAuxiliares(){
-    try{ await window.storage.set('kassel:auxiliares', JSON.stringify(auxiliares), true); }catch(e){ console.error(e); }
-  }
-  async function saveEventos(){
-    try{ await window.storage.set('kassel:events', JSON.stringify(eventos), true); }catch(e){ console.error(e); }
-  }
+  return resultado;
+}
+
+
+async function guardarOperadorAPI(nombre){
+  return await enviarAPI({
+    accion: "agregarOperador",
+    nombre: nombre
+  });
+}
+
+
+async function guardarAuxiliarAPI(nombre){
+  return await enviarAPI({
+    accion: "agregarAuxiliar",
+    nombre: nombre
+  });
+}
+
+
+async function guardarEventoAPI(evento){
+  return await enviarAPI({
+    accion: "guardarEvento",
+    evento: evento
+  });
+}
+
+
+async function eliminarEventoAPI(id){
+  return await enviarAPI({
+    accion: "eliminarEvento",
+    id: id
+  });
+}
 
   function fillSelect(select, list, placeholder){
     select.innerHTML = "";
@@ -852,14 +901,35 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
         `;
         list.appendChild(li);
       });
-      list.querySelectorAll(".del-btn").forEach(btn=>{
-        btn.addEventListener("click", async ()=>{
-          eventos = eventos.filter(ev=>ev.id !== btn.dataset.id);
-          await saveEventos();
-          renderCalendar();
-          openDayModal(y,m,d);
-        });
-      });
+     list.querySelectorAll(".del-btn").forEach(btn=>{
+  btn.addEventListener("click", async ()=>{
+
+    const id = btn.dataset.id;
+
+    try {
+
+      btn.disabled = true;
+      btn.textContent = "Eliminando...";
+
+      await eliminarEventoAPI(id);
+
+      await loadData();
+
+      renderCalendar();
+      openDayModal(y,m,d);
+
+    } catch(error) {
+
+      console.error("Error al eliminar evento:", error);
+      alert("No se pudo eliminar el registro.");
+
+      btn.disabled = false;
+      btn.textContent = "Eliminar";
+
+    }
+
+  });
+});
     }
     $("dayOverlay").classList.add("show");
   }
@@ -946,11 +1016,33 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
       if(en < s){ alertInline("La fecha final no puede ser anterior a la inicial."); return; }
       ev.start = s; ev.end = en;
     }
+const btnGuardar = $("btnSaveEvent");
+btnGuardar.disabled = true;
+btnGuardar.textContent = "Guardando...";
+   try {
 
-    eventos.push(ev);
-    await saveEventos();
-    $("eventOverlay").classList.remove("show");
-    renderCalendar();
+  await guardarEventoAPI(ev);
+
+  await loadData();
+
+  $("eventOverlay").classList.remove("show");
+
+  refreshPersonSelects();
+  renderCalendar();
+
+  console.log("Evento guardado en Google Sheets:", ev);
+
+} catch(error) {
+
+  console.error("Error al guardar evento:", error);
+
+  alertInline("No se pudo guardar el evento. Intenta nuevamente.");
+
+  } finally {
+
+  btnGuardar.disabled = false;
+  btnGuardar.textContent = "Guardar";
+}
   });
 
   function alertInline(msg){
@@ -966,17 +1058,57 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
 
   /* ---------- Add operator / auxiliary from sidebar ---------- */
   $("btnAddOperador").addEventListener("click", async ()=>{
-    const name = $("txtNuevoOperador").value.trim();
-    if(!name) return;
-    if(!operadores.includes(name)){ operadores.push(name); await saveOperadores(); refreshPersonSelects(); }
+  const name = $("txtNuevoOperador").value.trim();
+
+  if(!name) return;
+
+  try {
+
+    await guardarOperadorAPI(name);
+
+    await loadData();
+
+    refreshPersonSelects();
+    renderCalendar();
+
     $("txtNuevoOperador").value = "";
-  });
-  $("btnAddAuxiliar").addEventListener("click", async ()=>{
-    const name = $("txtNuevoAuxiliar").value.trim();
-    if(!name) return;
-    if(!auxiliares.includes(name)){ auxiliares.push(name); await saveAuxiliares(); refreshPersonSelects(); }
+
+    console.log("Operador guardado en Google Sheets:", name);
+
+  } catch(error) {
+
+    console.error("Error al guardar operador:", error);
+
+    alert("No se pudo guardar el operador.");
+
+  }
+});
+$("btnAddAuxiliar").addEventListener("click", async ()=>{
+  const name = $("txtNuevoAuxiliar").value.trim();
+
+  if(!name) return;
+
+  try {
+
+    await guardarAuxiliarAPI(name);
+
+    await loadData();
+
+    refreshPersonSelects();
+    renderCalendar();
+
     $("txtNuevoAuxiliar").value = "";
-  });
+
+    console.log("Auxiliar guardado en Google Sheets:", name);
+
+  } catch(error) {
+
+    console.error("Error al guardar auxiliar:", error);
+
+    alert("No se pudo guardar el auxiliar.");
+
+  }
+});
   $("txtNuevoOperador").addEventListener("keydown", e=>{ if(e.key==="Enter") $("btnAddOperador").click(); });
   $("txtNuevoAuxiliar").addEventListener("keydown", e=>{ if(e.key==="Enter") $("btnAddAuxiliar").click(); });
 
