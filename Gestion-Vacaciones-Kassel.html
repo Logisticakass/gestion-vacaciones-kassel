@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de vacaciones operaciones — Kassel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --k-black:#15130F;
+  --k-black-2:#211D17;
+  --k-paper:#F7F2E7;
+  --k-paper-2:#FFFDF8;
+  --k-line:#E4D9C4;
+  --k-orange:#F4610C;
+  --k-orange-dark:#C94A08;
+  --k-orange-tint:#FBE2CC;
+  --k-text:#221D15;
+  --k-text-soft:#6B6152;
+
+  --ev-vac:#F4610C;
+  --ev-vac-bg:#FDE7D4;
+  --ev-per:#1C6E6E;
+  --ev-per-bg:#DCEEED;
+  --ev-bday:#D69A1F;
+  --ev-bday-bg:#F8EACB;
+  --ev-personal:#5B4A8F;
+  --ev-personal-bg:#E7E1F3;
+
+  --radius:10px;
+  --shadow:0 2px 10px rgba(21,19,15,0.08);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--k-paper);
+  color:var(--k-text);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+}
+
+/* ---------- HEADER ---------- */
+.app-header{
+  background:var(--k-black);
+  color:#fff;
+  padding:22px 28px 0 28px;
+  position:relative;
+  overflow:hidden;
+}
+.header-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  padding-bottom:18px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.brand-mark{
+  width:52px;height:52px;flex:none;
+}
+.brand-text .word{
+  font-family:'Oswald',sans-serif;
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:2px;
+  color:#fff;
+  line-height:1;
+}
+.brand-text .word span{color:var(--k-orange);}
+.brand-text .sub{
+  font-family:'Oswald',sans-serif;
+  font-weight:500;
+  font-size:14px;
+  letter-spacing:0.5px;
+  color:#D8D2C4;
+  margin-top:4px;
+}
+.header-actions{
+  display:flex;gap:10px;align-items:center;
+}
+.pill-btn{
+  font-family:'Inter',sans-serif;
+  font-weight:600;
+  font-size:13px;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.05);
+  color:#fff;
+  padding:9px 16px;
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .15s ease, transform .1s ease;
+}
+.pill-btn:hover{background:rgba(255,255,255,0.14);}
+.pill-btn.primary{
+  background:var(--k-orange);
+  border-color:var(--k-orange);
+}
+.pill-btn.primary:hover{background:var(--k-orange-dark);}
+
+/* road strip with truck */
+.road{
+  position:relative;
+  height:26px;
+  background:repeating-linear-gradient(
+    90deg,
+    var(--k-orange) 0 26px,
+    transparent 26px 46px
+  );
+  background-position:0 center;
+  background-size:46px 3px;
+  background-repeat:repeat-x;
+  background-position-y:center;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.road::before{
+  content:"";
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:var(--k-black-2);
+  z-index:0;
+}
+.road-lane{
+  position:absolute;
+  left:0;right:0;top:50%;
+  height:3px;
+  transform:translateY(-50%);
+  background-image:repeating-linear-gradient(90deg, var(--k-orange) 0 22px, transparent 22px 40px);
+  z-index:1;
+}
+.truck-drive{
+  position:absolute;
+  bottom:2px;
+  left:0;
+  width:44px;height:24px;
+  z-index:2;
+  animation:driveAcross 16s linear infinite;
+}
+@keyframes driveAcross{
+  0%{ left:-6%; }
+  48%{ left:98%; }
+  50%{ left:98%; }
+  98%{ left:-6%; }
+  100%{ left:-6%; }
+}
+@media (prefers-reduced-motion: reduce){
+  .truck-drive{ animation:none; left:40%; }
+}
+
+/* ---------- LAYOUT ---------- */
+.layout{
+  display:grid;
+  grid-template-columns:290px 1fr;
+  gap:20px;
+  padding:22px 28px 40px 28px;
+  max-width:1400px;
+  margin:0 auto;
+}
+@media (max-width: 880px){
+  .layout{grid-template-columns:1fr;}
+}
+
+.panel{
+  background:var(--k-paper-2);
+  border:1px solid var(--k-line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.panel + .panel{margin-top:18px;}
+.panel-head{
+  padding:14px 16px 10px 16px;
+  border-bottom:1px solid var(--k-line);
+}
+.panel-head h3{
+  margin:0;
+  font-family:'Oswald',sans-serif;
+  font-size:14px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--k-text);
+}
+.panel-body{padding:14px 16px 16px 16px;}
+
+/* ---------- SIDEBAR ---------- */
+.field{margin-bottom:10px;}
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  color:var(--k-text-soft);
+  margin-bottom:5px;
+}
+select, input[type=text], input[type=date], textarea{
+  width:100%;
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  padding:9px 10px;
+  border:1px solid var(--k-line);
+  border-radius:7px;
+  background:#fff;
+  color:var(--k-text);
+}
+select:focus, input:focus, textarea:focus, button:focus-visible{
+  outline:2px solid var(--k-orange);
+  outline-offset:1px;
+}
+.inline-add{display:flex;gap:6px;margin-top:6px;}
+.inline-add input{flex:1;}
+.btn-small{
+  font-family:'Inter',sans-serif;
+  font-weight:600;
+  font-size:13px;
+  padding:8px 12px;
+  border-radius:7px;
+  border:1px solid var(--k-orange);
+  background:var(--k-orange);
+  color:#fff;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn-small:hover{background:var(--k-orange-dark);}
+.btn-ghost{
+  background:transparent;
+  color:var(--k-text);
+  border:1px solid var(--k-line);
+}
+.btn-ghost:hover{background:var(--k-orange-tint);border-color:var(--k-orange);}
+
+.person-list{
+  list-style:none;margin:8px 0 0 0;padding:0;
+  max-height:150px;overflow-y:auto;
+}
+.person-list li{
+  font-size:13px;
+  padding:6px 8px;
+  border-radius:6px;
+  color:var(--k-text);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.person-list li:hover{background:var(--k-orange-tint);}
+.tag-role{
+  font-size:10px;
+  color:var(--k-text-soft);
+  font-family:'JetBrains Mono',monospace;
+}
+
+.legend{list-style:none;margin:0;padding:0;}
+.legend li{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;padding:5px 0;
+}
+.dot{width:11px;height:11px;border-radius:3px;flex:none;}
+
+.search-results{margin-top:10px;}
+.search-hit{
+  border:1px solid var(--k-line);
+  border-left:4px solid var(--k-orange);
+  border-radius:7px;
+  padding:8px 10px;
+  margin-bottom:8px;
+  cursor:pointer;
+  background:#fff;
+}
+.search-hit:hover{background:var(--k-orange-tint);}
+.search-hit .name{font-weight:600;font-size:13px;}
+.search-hit .meta{font-size:12px;color:var(--k-text-soft);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.empty-note{font-size:13px;color:var(--k-text-soft);font-style:italic;}
+
+/* ---------- CALENDAR ---------- */
+.cal-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--k-line);
+  flex-wrap:wrap;gap:10px;
+}
+.month-title{
+  font-family:'Oswald',sans-serif;
+  font-size:22px;font-weight:600;
+  letter-spacing:0.5px;
+  min-width:220px;
+  text-transform:capitalize;
+}
+.nav-group{display:flex;gap:8px;align-items:center;}
+.icon-btn{
+  border:1px solid var(--k-line);
+  background:#fff;
+  width:34px;height:34px;
+  border-radius:7px;
+  cursor:pointer;
+  font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--k-text);
+}
+.icon-btn:hover{background:var(--k-orange-tint);border-color:var(--k-orange);}
+
+.weekday-row{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  padding:10px 18px 0 18px;
+  gap:8px;
+}
+.weekday-row div{
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:1px;
+  color:var(--k-text-soft);
+  text-transform:uppercase;
+}
+
+.cal-grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:8px;
+  padding:8px 18px 20px 18px;
+}
+.day-cell{
+  position:relative;
+  min-height:96px;
+  background:var(--k-paper);
+  border:1px solid var(--k-line);
+  border-radius:8px;
+  padding:6px 6px 8px 6px;
+  cursor:pointer;
+  clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  transition:box-shadow .12s ease, border-color .12s ease;
+  display:flex;flex-direction:column;gap:4px;
+}
+.day-cell:hover{border-color:var(--k-orange);box-shadow:0 0 0 1px var(--k-orange) inset;}
+.day-cell.other-month{opacity:0.35;}
+.day-cell.weekend{background:#F1E9D8;}
+.day-cell.today{border-color:var(--k-orange);border-width:2px;}
+.day-num{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  font-size:13px;
+  color:var(--k-text-soft);
+}
+.day-cell.today .day-num{color:var(--k-orange-dark);}
+.chip{
+  font-size:10.5px;
+  font-weight:600;
+  padding:2px 6px;
+  border-radius:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#241d13;
+}
+.chip-more{
+  font-size:10px;
+  color:var(--k-text-soft);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ---------- MODAL / POPOVER ---------- */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(21,19,15,0.55);
+  display:none;
+  align-items:center;justify-content:center;
+  z-index:50;
+  padding:20px;
+}
+.overlay.show{display:flex;}
+.modal{
+  background:var(--k-paper-2);
+  border-radius:12px;
+  width:100%;max-width:440px;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:0 12px 40px rgba(0,0,0,0.3);
+}
+.modal-head{
+  background:var(--k-black);
+  color:#fff;
+  padding:16px 20px;
+  border-radius:12px 12px 0 0;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-head h3{
+  margin:0;font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:0.5px;
+}
+.modal-close{
+  background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;
+}
+.modal-body{padding:18px 20px;}
+.radio-row{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-chip{
+  flex:1;min-width:100px;
+  border:1px solid var(--k-line);
+  border-radius:8px;
+  padding:8px 10px;
+  cursor:pointer;
+  font-size:12.5px;
+  font-weight:600;
+  text-align:center;
+  display:flex;align-items:center;gap:6px;justify-content:center;
+}
+.radio-chip input{display:none;}
+.radio-chip.checked{border-color:currentColor;box-shadow:0 0 0 1px currentColor inset;}
+.date-row{display:flex;gap:8px;}
+.date-row .field{flex:1;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
+.popover-list{list-style:none;margin:0;padding:0;}
+.popover-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--k-line);
+  font-size:13px;
+}
+.popover-item:last-child{border-bottom:none;}
+.popover-item .pi-name{font-weight:600;}
+.popover-item .pi-type{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  padding:2px 6px;border-radius:4px;
+}
+.del-btn{
+  background:none;border:none;color:#B0483A;cursor:pointer;font-size:13px;font-weight:600;
+}
+.del-btn:hover{text-decoration:underline;}
+
+.hint{font-size:12px;color:var(--k-text-soft);margin-top:4px;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--k-line);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="60" height="60" rx="12" fill="#1F1C17"/>
+        <g transform="translate(6,18)">
+          <rect x="0" y="6" width="30" height="16" rx="2" fill="#F4610C"/>
+          <rect x="30" y="0" width="18" height="22" rx="2" fill="#F4610C"/>
+          <rect x="33" y="4" width="9" height="8" rx="1" fill="#1F1C17"/>
+          <circle cx="10" cy="26" r="5" fill="#1F1C17" stroke="#F7F2E7" stroke-width="1.5"/>
+          <circle cx="38" cy="26" r="5" fill="#1F1C17" stroke="#F7F2E7" stroke-width="1.5"/>
+        </g>
+      </svg>
+      <div class="brand-text">
+        <div class="word">KASSEL<span>.</span></div>
+        <div class="sub">Gestión de vacaciones operaciones</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="pill-btn primary" id="btnNuevoEvento">+ Registrar día</button>
+    </div>
+  </div>
+  <div class="road">
+    <div class="road-lane"></div>
+    <svg class="truck-drive" viewBox="0 0 64 34" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="10" width="38" height="18" rx="2" fill="#F4610C"/>
+      <rect x="38" y="2" width="22" height="26" rx="2" fill="#F4610C"/>
+      <rect x="42" y="6" width="11" height="9" rx="1" fill="#15130F"/>
+      <circle cx="13" cy="30" r="6" fill="#15130F" stroke="#F7F2E7" stroke-width="2"/>
+      <circle cx="48" cy="30" r="6" fill="#15130F" stroke="#F7F2E7" stroke-width="2"/>
+    </svg>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div>
+    <div class="panel">
+      <div class="panel-head"><h3>Operadores</h3></div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="selOperador">Lista de operadores</label>
+          <select id="selOperador"></select>
+        </div>
+        <div class="inline-add">
+          <input type="text" id="txtNuevoOperador" placeholder="Agregar operador…">
+          <button class="btn-small" id="btnAddOperador">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Auxiliares</h3></div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="selAuxiliar">Lista de auxiliares</label>
+          <select id="selAuxiliar"><option value="">— Sin auxiliares aún —</option></select>
+        </div>
+        <div class="inline-add">
+          <input type="text" id="txtNuevoAuxiliar" placeholder="Agregar auxiliar…">
+          <button class="btn-small" id="btnAddAuxiliar">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Buscar persona</h3></div>
+      <div class="panel-body">
+        <input type="text" id="txtBuscar" placeholder="Nombre del operador o auxiliar…">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Leyenda</h3></div>
+      <div class="panel-body">
+        <ul class="legend">
+          <li><span class="dot" style="background:var(--ev-vac)"></span> Vacaciones</li>
+          <li><span class="dot" style="background:var(--ev-per)"></span> Permiso</li>
+          <li><span class="dot" style="background:var(--ev-bday)"></span> Cumpleaños</li>
+          <li><span class="dot" style="background:var(--ev-personal)"></span> Día personal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="panel">
+    <div class="cal-toolbar">
+      <div class="month-title" id="monthTitle">Mes</div>
+      <div class="nav-group">
+        <button class="icon-btn" id="btnPrev" aria-label="Mes anterior">‹</button>
+        <button class="pill-btn btn-ghost" id="btnHoy" style="background:#fff;color:var(--k-text);">Hoy</button>
+        <button class="icon-btn" id="btnNext" aria-label="Mes siguiente">›</button>
+      </div>
+    </div>
+    <div class="weekday-row">
+      <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL: nuevo evento -->
+<div class="overlay" id="eventOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Registrar día</h3>
+      <button class="modal-close" id="btnCloseModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Tipo de persona</label>
+        <div class="radio-row">
+          <label class="radio-chip" id="chipOperador" style="color:#1F1C17;">
+            <input type="radio" name="personType" value="operador" checked> Operador
+          </label>
+          <label class="radio-chip" id="chipAuxiliar" style="color:#1F1C17;">
+            <input type="radio" name="personType" value="auxiliar"> Auxiliar
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="selPersonaModal">Nombre</label>
+        <select id="selPersonaModal"></select>
+        <div class="inline-add" id="modalAddPersonRow" style="display:none;">
+          <input type="text" id="txtModalNuevaPersona" placeholder="Nombre nuevo…">
+          <button class="btn-small" id="btnModalAddPersona">Agregar</button>
+        </div>
+        <div class="hint">¿No está en la lista? <a href="#" id="lnkMostrarAddPersona">Agregar nueva persona</a></div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de día</label>
+        <div class="radio-row" id="typeRadioRow"></div>
+      </div>
+
+      <div class="field" id="rangeFields">
+        <div class="date-row">
+          <div class="field">
+            <label for="dateStart">Desde</label>
+            <input type="date" id="dateStart">
+          </div>
+          <div class="field">
+            <label for="dateEnd">Hasta</label>
+            <input type="date" id="dateEnd">
+          </div>
+        </div>
+      </div>
+
+      <div class="field" id="bdayField" style="display:none;">
+        <label for="dateBday">Fecha de cumpleaños</label>
+        <input type="date" id="dateBday">
+        <div class="hint">Se marcará automáticamente cada año en esa fecha.</div>
+      </div>
+
+      <div class="field">
+        <label for="txtNota">Nota (opcional)</label>
+        <input type="text" id="txtNota" placeholder="Ej. Cita médica, viaje familiar…">
+      </div>
+
+      <div class="modal-footer">
+        <button class="pill-btn btn-ghost" id="btnCancelEvent" style="background:#fff;color:var(--k-text);">Cancelar</button>
+        <button class="pill-btn primary" id="btnSaveEvent">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: detalle del día -->
+<div class="overlay" id="dayOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head">
+      <h3 id="dayModalTitle">Día</h3>
+      <button class="modal-close" id="btnCloseDayModal">×</button>
+    </div>
+    <div class="modal-body">
+      <ul class="popover-list" id="dayEventsList"></ul>
+      <div class="modal-footer">
+        <button class="pill-btn primary" id="btnAddFromDay">+ Registrar en este día</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const OPERADORES_INICIALES = [
+    "Daniel Lopez","Diego Rueda","Erick Pineda","Agustín Gayosso","Jesús Cardenas",
+    "Felix Fernandez","Luis Garcia","Luis Aguirre","Eduardo Medina","Gustavo Alegria",
+    "Miguel Ponce","Enrique Briseño","Fernando Garcia","Joel Monroy","Miguel Mejía","Omar Dolores"
+  ];
+
+  const EVENT_TYPES = [
+    {key:"vacaciones", label:"Vacaciones", color:"var(--ev-vac)", bg:"var(--ev-vac-bg)"},
+    {key:"permiso", label:"Permiso", color:"var(--ev-per)", bg:"var(--ev-per-bg)"},
+    {key:"cumpleanos", label:"Cumpleaños", color:"var(--ev-bday)", bg:"var(--ev-bday-bg)"},
+    {key:"personal", label:"Día personal", color:"var(--ev-personal)", bg:"var(--ev-personal-bg)"}
+  ];
+  function typeInfo(key){ return EVENT_TYPES.find(t=>t.key===key) || EVENT_TYPES[0]; }
+
+  const WEEKDAYS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+  let operadores = [];
+  let auxiliares = [];
+  let eventos = []; // {id, name, role, type, start, end, bmonthday, note}
+  let currentDate = new Date();
+  let viewYear = currentDate.getFullYear();
+  let viewMonth = currentDate.getMonth();
+  let selectedDayForModal = null;
+  let editingDayIso = null;
+
+  const $ = (id)=>document.getElementById(id);
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function isoOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+  function todayIso(){ const t=new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); }
+
+  async function loadData(){
+    try{
+      const res = await window.storage.get('kassel:operators', true);
+      operadores = res ? JSON.parse(res.value) : OPERADORES_INICIALES.slice();
+    }catch(e){ operadores = OPERADORES_INICIALES.slice(); }
+    if(!operadores || !operadores.length) operadores = OPERADORES_INICIALES.slice();
+
+    try{
+      const res = await window.storage.get('kassel:auxiliares', true);
+      auxiliares = res ? JSON.parse(res.value) : [];
+    }catch(e){ auxiliares = []; }
+
+    try{
+      const res = await window.storage.get('kassel:events', true);
+      eventos = res ? JSON.parse(res.value) : [];
+    }catch(e){ eventos = []; }
+  }
+
+  async function saveOperadores(){
+    try{ await window.storage.set('kassel:operators', JSON.stringify(operadores), true); }catch(e){ console.error(e); }
+  }
+  async function saveAuxiliares(){
+    try{ await window.storage.set('kassel:auxiliares', JSON.stringify(auxiliares), true); }catch(e){ console.error(e); }
+  }
+  async function saveEventos(){
+    try{ await window.storage.set('kassel:events', JSON.stringify(eventos), true); }catch(e){ console.error(e); }
+  }
+
+  function fillSelect(select, list, placeholder){
+    select.innerHTML = "";
+    if(!list.length){
+      const opt = document.createElement("option");
+      opt.value=""; opt.textContent = placeholder || "— Sin registros —";
+      select.appendChild(opt);
+      return;
+    }
+    list.forEach(name=>{
+      const opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      select.appendChild(opt);
+    });
+  }
+
+  function refreshPersonSelects(){
+    fillSelect($("selOperador"), operadores, "— Sin operadores —");
+    fillSelect($("selAuxiliar"), auxiliares, "— Sin auxiliares aún —");
+    refreshModalPersonSelect();
+  }
+
+  function refreshModalPersonSelect(){
+    const type = document.querySelector('input[name="personType"]:checked').value;
+    const list = type === "operador" ? operadores : auxiliares;
+    fillSelect($("selPersonaModal"), list, type==="operador" ? "— Sin operadores —" : "— Sin auxiliares —");
+  }
+
+  /* ---------- Type radio row ---------- */
+  function buildTypeRadioRow(){
+    const row = $("typeRadioRow");
+    row.innerHTML = "";
+    EVENT_TYPES.forEach((t,idx)=>{
+      const label = document.createElement("label");
+      label.className = "radio-chip";
+      label.style.color = t.color;
+      label.dataset.key = t.key;
+      label.innerHTML = `<input type="radio" name="eventType" value="${t.key}" ${idx===0?"checked":""}> ${t.label}`;
+      row.appendChild(label);
+    });
+    updateTypeRowChecked();
+    row.querySelectorAll('input[name="eventType"]').forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        updateTypeRowChecked();
+        toggleDateFields();
+      });
+    });
+  }
+  function updateTypeRowChecked(){
+    document.querySelectorAll('#typeRadioRow .radio-chip').forEach(chip=>{
+      const input = chip.querySelector('input');
+      chip.classList.toggle("checked", input.checked);
+    });
+  }
+  function toggleDateFields(){
+    const type = document.querySelector('input[name="eventType"]:checked').value;
+    if(type === "cumpleanos"){
+      $("rangeFields").style.display = "none";
+      $("bdayField").style.display = "block";
+    }else{
+      $("rangeFields").style.display = "block";
+      $("bdayField").style.display = "none";
+    }
+  }
+
+  /* ---------- Calendar rendering ---------- */
+  function eventsOnDate(y,m,d){
+    const iso = isoOf(y,m,d);
+    const mmdd = `${pad(m+1)}-${pad(d)}`;
+    return eventos.filter(ev=>{
+      if(ev.type === "cumpleanos") return ev.bmonthday === mmdd;
+      return ev.start <= iso && iso <= ev.end;
+    });
+  }
+
+  function renderCalendar(){
+    $("monthTitle").textContent = `${WEEKDAYS_ES[viewMonth]} ${viewYear}`;
+    const grid = $("calGrid");
+    grid.innerHTML = "";
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    let leading = firstOfMonth.getDay(); // 0=Sun
+    leading = (leading + 6) % 7; // convert to Monday-first
+    const daysInThisMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+    const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+    const totalCells = Math.ceil((leading + daysInThisMonth) / 7) * 7;
+    const tIso = todayIso();
+
+    for(let i=0;i<totalCells;i++){
+      const cell = document.createElement("div");
+      let y = viewYear, m = viewMonth, dayNum;
+      let otherMonth = false;
+
+      if(i < leading){
+        dayNum = daysInPrevMonth - leading + 1 + i;
+        m = viewMonth - 1; y = viewYear;
+        if(m<0){ m=11; y=viewYear-1; }
+        otherMonth = true;
+      } else if(i >= leading + daysInThisMonth){
+        dayNum = i - leading - daysInThisMonth + 1;
+        m = viewMonth + 1; y = viewYear;
+        if(m>11){ m=0; y=viewYear+1; }
+        otherMonth = true;
+      } else {
+        dayNum = i - leading + 1;
+      }
+
+      const iso = isoOf(y,m,dayNum);
+      const jsWeekday = new Date(y,m,dayNum).getDay();
+      const isWeekend = (jsWeekday===0 || jsWeekday===6);
+
+      cell.className = "day-cell" + (otherMonth?" other-month":"") + (isWeekend?" weekend":"") + (iso===tIso?" today":"");
+      cell.dataset.iso = iso;
+
+      const numEl = document.createElement("div");
+      numEl.className = "day-num";
+      numEl.textContent = dayNum;
+      cell.appendChild(numEl);
+
+      const dayEvents = eventsOnDate(y,m,dayNum);
+      const maxShow = 3;
+      dayEvents.slice(0,maxShow).forEach(ev=>{
+        const info = typeInfo(ev.type);
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.style.background = info.bg;
+        chip.style.color = "#241d13";
+        chip.style.borderLeft = `3px solid ${info.color}`;
+        chip.textContent = ev.name;
+        cell.appendChild(chip);
+      });
+      if(dayEvents.length > maxShow){
+        const more = document.createElement("div");
+        more.className = "chip-more";
+        more.textContent = `+${dayEvents.length - maxShow} más`;
+        cell.appendChild(more);
+      }
+
+      cell.addEventListener("click", ()=> openDayModal(y,m,dayNum));
+      grid.appendChild(cell);
+    }
+  }
+
+  /* ---------- Day detail modal ---------- */
+  function openDayModal(y,m,d){
+    const iso = isoOf(y,m,d);
+    editingDayIso = iso;
+    const dateObj = new Date(y,m,d);
+    const dayLabel = dateObj.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    $("dayModalTitle").textContent = dayLabel.charAt(0).toUpperCase()+dayLabel.slice(1);
+
+    const list = $("dayEventsList");
+    list.innerHTML = "";
+    const dayEvents = eventsOnDate(y,m,d);
+    if(!dayEvents.length){
+      const li = document.createElement("li");
+      li.className = "empty-note";
+      li.style.padding = "10px 0";
+      li.textContent = "Nadie registrado este día.";
+      list.appendChild(li);
+    } else {
+      dayEvents.forEach(ev=>{
+        const info = typeInfo(ev.type);
+        const li = document.createElement("li");
+        li.className = "popover-item";
+        li.innerHTML = `
+          <div>
+            <div class="pi-name">${escapeHtml(ev.name)} <span class="tag-role">(${ev.role})</span></div>
+            <span class="pi-type" style="background:${info.bg};color:#241d13;">${info.label}</span>
+            ${ev.note ? `<div class="hint">${escapeHtml(ev.note)}</div>` : ""}
+          </div>
+          <button class="del-btn" data-id="${ev.id}">Eliminar</button>
+        `;
+        list.appendChild(li);
+      });
+      list.querySelectorAll(".del-btn").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          eventos = eventos.filter(ev=>ev.id !== btn.dataset.id);
+          await saveEventos();
+          renderCalendar();
+          openDayModal(y,m,d);
+        });
+      });
+    }
+    $("dayOverlay").classList.add("show");
+  }
+  $("btnCloseDayModal").addEventListener("click", ()=> $("dayOverlay").classList.remove("show"));
+  $("dayOverlay").addEventListener("click", (e)=>{ if(e.target === $("dayOverlay")) $("dayOverlay").classList.remove("show"); });
+  $("btnAddFromDay").addEventListener("click", ()=>{
+    $("dayOverlay").classList.remove("show");
+    openEventModal(editingDayIso);
+  });
+
+  /* ---------- Event modal ---------- */
+  function openEventModal(prefillIso){
+    $("txtModalNuevaPersona").value = "";
+    $("modalAddPersonRow").style.display = "none";
+    $("txtNota").value = "";
+    document.querySelector('input[name="personType"][value="operador"]').checked = true;
+    refreshModalPersonSelect();
+    buildTypeRadioRow();
+    toggleDateFields();
+    const iso = prefillIso || todayIso();
+    $("dateStart").value = iso;
+    $("dateEnd").value = iso;
+    $("dateBday").value = iso;
+    $("eventOverlay").classList.add("show");
+  }
+  $("btnNuevoEvento").addEventListener("click", ()=> openEventModal(null));
+  $("btnCloseModal").addEventListener("click", ()=> $("eventOverlay").classList.remove("show"));
+  $("btnCancelEvent").addEventListener("click", ()=> $("eventOverlay").classList.remove("show"));
+  $("eventOverlay").addEventListener("click", (e)=>{ if(e.target === $("eventOverlay")) $("eventOverlay").classList.remove("show"); });
+
+  document.querySelectorAll('input[name="personType"]').forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      refreshModalPersonSelect();
+      $("modalAddPersonRow").style.display = "none";
+    });
+  });
+
+  $("lnkMostrarAddPersona").addEventListener("click", (e)=>{
+    e.preventDefault();
+    $("modalAddPersonRow").style.display = "flex";
+    $("txtModalNuevaPersona").focus();
+  });
+
+  $("btnModalAddPersona").addEventListener("click", async ()=>{
+    const name = $("txtModalNuevaPersona").value.trim();
+    if(!name) return;
+    const type = document.querySelector('input[name="personType"]:checked').value;
+    if(type === "operador"){
+      if(!operadores.includes(name)){ operadores.push(name); await saveOperadores(); }
+    } else {
+      if(!auxiliares.includes(name)){ auxiliares.push(name); await saveAuxiliares(); }
+    }
+    refreshPersonSelects();
+    $("selPersonaModal").value = name;
+    $("txtModalNuevaPersona").value = "";
+    $("modalAddPersonRow").style.display = "none";
+  });
+
+  $("btnSaveEvent").addEventListener("click", async ()=>{
+    const type = document.querySelector('input[name="personType"]:checked').value;
+    const name = $("selPersonaModal").value;
+    const evType = document.querySelector('input[name="eventType"]:checked').value;
+    const note = $("txtNota").value.trim();
+
+    if(!name){
+      alertInline("Selecciona o agrega una persona antes de guardar.");
+      return;
+    }
+
+    const ev = {
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random())),
+      name, role: type, type: evType, note
+    };
+
+    if(evType === "cumpleanos"){
+      const bval = $("dateBday").value;
+      if(!bval){ alertInline("Selecciona la fecha de cumpleaños."); return; }
+      const parts = bval.split("-");
+      ev.bmonthday = `${parts[1]}-${parts[2]}`;
+      ev.start = bval; ev.end = bval;
+    } else {
+      const s = $("dateStart").value, en = $("dateEnd").value;
+      if(!s || !en){ alertInline("Selecciona las fechas de inicio y fin."); return; }
+      if(en < s){ alertInline("La fecha final no puede ser anterior a la inicial."); return; }
+      ev.start = s; ev.end = en;
+    }
+
+    eventos.push(ev);
+    await saveEventos();
+    $("eventOverlay").classList.remove("show");
+    renderCalendar();
+  });
+
+  function alertInline(msg){
+    let box = document.getElementById("inlineAlertBox");
+    if(!box){
+      box = document.createElement("div");
+      box.id = "inlineAlertBox";
+      box.style.cssText = "margin-top:8px;padding:8px 10px;border-radius:7px;background:#FBE2CC;color:#8a3a08;font-size:12.5px;font-weight:600;";
+      $("btnSaveEvent").parentElement.insertAdjacentElement("beforebegin", box);
+    }
+    box.textContent = msg;
+  }
+
+  /* ---------- Add operator / auxiliary from sidebar ---------- */
+  $("btnAddOperador").addEventListener("click", async ()=>{
+    const name = $("txtNuevoOperador").value.trim();
+    if(!name) return;
+    if(!operadores.includes(name)){ operadores.push(name); await saveOperadores(); refreshPersonSelects(); }
+    $("txtNuevoOperador").value = "";
+  });
+  $("btnAddAuxiliar").addEventListener("click", async ()=>{
+    const name = $("txtNuevoAuxiliar").value.trim();
+    if(!name) return;
+    if(!auxiliares.includes(name)){ auxiliares.push(name); await saveAuxiliares(); refreshPersonSelects(); }
+    $("txtNuevoAuxiliar").value = "";
+  });
+  $("txtNuevoOperador").addEventListener("keydown", e=>{ if(e.key==="Enter") $("btnAddOperador").click(); });
+  $("txtNuevoAuxiliar").addEventListener("keydown", e=>{ if(e.key==="Enter") $("btnAddAuxiliar").click(); });
+
+  /* ---------- Search ---------- */
+  $("txtBuscar").addEventListener("input", ()=>{
+    const q = $("txtBuscar").value.trim().toLowerCase();
+    const box = $("searchResults");
+    box.innerHTML = "";
+    if(!q){ return; }
+
+    const allPeople = [
+      ...operadores.map(n=>({name:n, role:"operador"})),
+      ...auxiliares.map(n=>({name:n, role:"auxiliar"}))
+    ];
+    const matches = allPeople.filter(p => p.name.toLowerCase().includes(q));
+
+    if(!matches.length){
+      box.innerHTML = `<div class="empty-note">No se encontró a nadie con ese nombre.</div>`;
+      return;
+    }
+
+    matches.forEach(p=>{
+      const personEvents = eventos.filter(ev=>ev.name === p.name && ev.role === p.role)
+        .sort((a,b)=> a.start.localeCompare(b.start));
+
+      const hit = document.createElement("div");
+      hit.className = "search-hit";
+      const countTxt = personEvents.length
+        ? `${personEvents.length} registro(s) — próx: ${formatShort(personEvents[0])}`
+        : "Sin registros aún";
+      hit.innerHTML = `<div class="name">${escapeHtml(p.name)} <span class="tag-role">(${p.role})</span></div><div class="meta">${countTxt}</div>`;
+      hit.addEventListener("click", ()=>{
+        if(personEvents.length){
+          const first = personEvents[0];
+          const d = new Date(first.type==="cumpleanos" ? first.start : first.start);
+          viewYear = d.getFullYear(); viewMonth = d.getMonth();
+          renderCalendar();
+        }
+      });
+      box.appendChild(hit);
+    });
+  });
+
+  function formatShort(ev){
+    const info = typeInfo(ev.type);
+    return `${info.label} (${ev.start})`;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  /* ---------- Nav ---------- */
+  $("btnPrev").addEventListener("click", ()=>{
+    viewMonth--; if(viewMonth<0){ viewMonth=11; viewYear--; }
+    renderCalendar();
+  });
+  $("btnNext").addEventListener("click", ()=>{
+    viewMonth++; if(viewMonth>11){ viewMonth=0; viewYear++; }
+    renderCalendar();
+  });
+  $("btnHoy").addEventListener("click", ()=>{
+    const t = new Date();
+    viewYear = t.getFullYear(); viewMonth = t.getMonth();
+    renderCalendar();
+  });
+
+  /* ---------- Init ---------- */
+  async function init(){
+    await loadData();
+    if(!operadores.length){ operadores = OPERADORES_INICIALES.slice(); await saveOperadores(); }
+    refreshPersonSelects();
+    buildTypeRadioRow();
+    toggleDateFields();
+    renderCalendar();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
