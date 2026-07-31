@@ -85,6 +85,44 @@ body{
 .header-actions{
   display:flex;gap:10px;align-items:center;
 }
+.header-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+/* PEGA AQUÍ */
+.sync-status{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 11px;
+  border-radius:999px;
+  background:#eef8f0;
+  border:1px solid #cfe8d3;
+  color:#35633d;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.sync-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#39a852;
+  flex-shrink:0;
+}
+
+.sync-status.syncing .sync-dot{
+  animation:syncPulse 1s infinite;
+}
+
+@keyframes syncPulse{
+  0%,100%{ opacity:1; }
+  50%{ opacity:.3; }
+}
+
 .pill-btn{
   font-family:'Inter',sans-serif;
   font-weight:600;
@@ -448,9 +486,16 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
        <div class="sub">Gestión de vacaciones operaciones Kassel</div>
       </div>
     </div>
-    <div class="header-actions">
-      <button class="pill-btn primary" id="btnNuevoEvento">+ Registrar día</button>
-    </div>
+   <div class="header-actions">
+
+  <div id="syncStatus" class="sync-status">
+    <span class="sync-dot"></span>
+    <span id="syncText">Sincronizando...</span>
+  </div>
+
+  <button class="pill-btn primary" id="btnNuevoEvento">+ Registrar día</button>
+
+</div>
   </div>
   <div class="road">
     <div class="road-lane"></div>
@@ -619,6 +664,40 @@ select:focus, input:focus, textarea:focus, button:focus-visible{
 <script>
 (function(){
 const API_URL = "https://script.google.com/macros/s/AKfycbylq0cphxg3Pmrc-Z6lzOjhneAk_qt9WMhCOSJi2sJMizp4ZyYmB2GloufQzrTr91QR_g/exec";
+let ultimaSincronizacion = null;
+
+function marcarSincronizacion(){
+  ultimaSincronizacion = Date.now();
+
+  const status = document.getElementById("syncStatus");
+  const texto = document.getElementById("syncText");
+
+  if(status) status.classList.remove("syncing");
+  if(texto) texto.textContent = "Sincronizado · actualizado hace 0 s";
+}
+
+function mostrarSincronizando(){
+  const status = document.getElementById("syncStatus");
+  const texto = document.getElementById("syncText");
+
+  if(status) status.classList.add("syncing");
+  if(texto) texto.textContent = "Sincronizando...";
+}
+
+function actualizarTextoSincronizacion(){
+  if(!ultimaSincronizacion) return;
+
+  const texto = document.getElementById("syncText");
+  if(!texto) return;
+
+  const segundos = Math.floor(
+    (Date.now() - ultimaSincronizacion) / 1000
+  );
+
+  texto.textContent = `Sincronizado · actualizado hace ${segundos} s`;
+}
+
+setInterval(actualizarTextoSincronizacion, 1000);
   const OPERADORES_INICIALES = [
     "Daniel Lopez","Diego Rueda","Erick Pineda","Agustín Gayosso","Jesús Cardenas",
     "Felix Fernandez","Luis Garcia","Luis Aguirre","Eduardo Medina","Gustavo Alegria",
@@ -652,6 +731,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbylq0cphxg3Pmrc-Z6lzOjh
 
 async function loadData(){
   try {
+    mostrarSincronizando();
 
     const respuesta = await fetch(API_URL + "?accion=cargarDatos");
     const datos = await respuesta.json();
@@ -663,6 +743,7 @@ async function loadData(){
     operadores = datos.operadores.map(persona => persona.nombre);
     auxiliares = datos.auxiliares.map(persona => persona.nombre);
     eventos = datos.eventos || [];
+    marcarSincronizacion();
 
 
     console.log("Datos cargados desde Google Sheets");
