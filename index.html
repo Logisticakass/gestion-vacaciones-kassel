@@ -1179,14 +1179,27 @@ $("btnAddAuxiliar").addEventListener("click", async ()=>{
   });
 
   /* ---------- Init ---------- */
-  async function init(){
-    await loadData();
-    if(!operadores.length){ operadores = OPERADORES_INICIALES.slice(); await saveOperadores(); }
-    refreshPersonSelects();
-    buildTypeRadioRow();
-    toggleDateFields();
-    renderCalendar();
-  }
+ async function init(){
+  await loadData();
+
+  refreshPersonSelects();
+  buildTypeRadioRow();
+  toggleDateFields();
+  renderCalendar();
+
+  setInterval(async () => {
+    try {
+      await loadData();
+      refreshPersonSelects();
+      renderCalendar();
+
+      console.log("Datos actualizados automáticamente");
+
+    } catch (error) {
+      console.error("Error en actualización automática:", error);
+    }
+  }, 30000);
+}
   init();
 })();
 </script>
